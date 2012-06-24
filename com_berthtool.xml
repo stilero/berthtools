@@ -34,7 +34,6 @@
 	</files>	
 	<languages folder="site">
 		<language tag="en-GB">language/en-GB.com_berthtool.ini</language>
-    	<language tag="de-DE">language/de-DE.com_berthtool.ini</language>            
 	</languages>
 	<administration>
 		<menu link="index.php?option=com_berthtool">Berthtool</menu>
@@ -58,9 +57,7 @@
 		</files>	
         <languages folder="admin">
         	<language tag="en-GB">language/en-GB.com_berthtool.ini</language>
-            <language tag="de-DE">language/de-DE.com_berthtool.ini</language>
         	<language tag="en-GB">language/en-GB.com_berthtool.sys.ini</language>
-            <language tag="de-DE">language/de-DE.com_berthtool.sys.ini</language>                           
 		</languages>		
 	</administration>
 </install>

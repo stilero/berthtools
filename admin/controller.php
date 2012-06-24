@@ -22,47 +22,62 @@ jimport('joomla.application.component.controller');
 class BerthtoolController extends JController
 {
 
+	protected $_viewname = 'item';
+	protected $_mainmodel = 'item';
+	protected $_itemname = 'Item';    
+
+	/**
+	 * Constructor
+	 */
+		 
+	public function __construct($config = array ()) 
+	{
+		
+		parent :: __construct($config);
+		
+		if (isset($config['viewname'])) $this->_viewname = $config['viewname'];
+		if (isset($config['mainmodel'])) $this->_mainmodel = $config['mainmodel'];
+		if (isset($config['itemname'])) $this->_itemname = $config['itemname']; 		
+		JRequest :: setVar('view', $this->_viewname);
+
+	}
+	
+	/*
+	 * Overloaded Method display
+	 */
 	function display() 
 	{
-            $view =& $this->getView('locations', 'html');
-            $model =& $this->getModel('locations');
-            $view->setModel($model, true);
-            
-            $view->display();
+
+		switch($this->getTask())
+		{
+			case 'add'     :
+			{
+				JRequest::setVar( 'hidemainmenu', 1 );
+				JRequest::setVar( 'layout', 'form'  );
+				JRequest::setVar( 'view', $this->_viewname);
+				JRequest::setVar( 'edit', false );
+
+			} break;
+			case 'edit'    :
+			{
+				JRequest::setVar( 'hidemainmenu', 1 );
+				JRequest::setVar( 'layout', 'form'  );
+				JRequest::setVar( 'view', $this->_viewname);
+				JRequest::setVar( 'edit', true );
+
+			} break;
+		}
+		parent :: display();
 	}
-        
-        function edit(){
-            // Check for request forgeries
-            //JRequest :: checkToken() or jexit('Invalid Token');
-            $cids = JRequest::getVar('cid', null, 'default', 'array');
-            if($cids === null){
-                JError::raiseError(500, 'cid parameter missing');
-            }
-            $locID = (int)$cids[0];
-            $requestedView = JRequest::getVar('view', 'location');
-            $view =& $this->getView($requestedView, 'html');
-            $model =& $this->getModel('location');
-            $view->setModel($model, true);
-            $view->edit($locID);
-        }
-        
-        function add(){
-            // Check for request forgeries
-            //JRequest :: checkToken() or jexit('Invalid Token');
-            $requestedView = JRequest::getVar('view', 'location');
-            $view = $this->getView($requestedView, 'html');
-            $model =& $this->getModel('location');
-            $view->setModel($model, true);
-            $view->add();
-        }
 
  	/**
 	 *stores the item and returnss to previous page 
 	 *
 	 */
 
-	function apply(){
-            $this-> save();
+	function apply() 
+	{
+		$this-> save();
 	}
 
 	/**
@@ -70,34 +85,62 @@ class BerthtoolController extends JController
 	 */
 	function save() 
 	{
-            // Check for request forgeries
-            //JRequest :: checkToken() or jexit('Invalid Token');
-            $model =& $this->getModel('location');
-            $model->store();
-            $redirectTo = JRoute::_('index.php?option='.JRequest::getVar('option').'&task=display');
-            $this->setRedirect($redirectTo, 'Location Saved');
-	}
+		// Check for request forgeries
+		JRequest :: checkToken() or jexit('Invalid Token');
+		
+		$db = & JFactory::getDBO();  
+
+		$post = JRequest :: getVar('jform', array(), 'post', 'array');
+		$cid = JRequest :: getVar('cid', array (
+			0
+		), 'post', 'array');
+		$post['id'] = (int) $cid[0];	
+		
+		$model = $this->getModel($this->_mainmodel);
+		if ($model->store($post)) {
+			$msg = JText :: _($this->_itemname .' Saved');
+		} else {
+			$msg = $model->getError(); 
+		}
         
-        function cancel(){
-            $redirectTo = JRoute::_('index.php?option='.JRequest::getVar('option').'&task=display');
-            $this->setRedirect($redirectTo, 'Cancelled');
-        }
+		switch ($this->getTask())
+		{
+			case 'apply':
+				$link = 'index.php?option=com_berthtool&view='.$this->_viewname.'&task=edit&cid[]='.$model->getId() ;
+				break;
+
+			case 'save':
+			default:
+				$link = 'index.php?option=com_berthtool&view='.$this->_viewname;
+				break;
+		}
+        
+
+		$this->setRedirect($link, $msg);
+	}
 
 	/**
 	 * remove an item
 	 */		
-	function remove(){
-            // Check for request forgeries
-            //JRequest :: checkToken() or jexit('Invalid Token');
-            $cid = JRequest :: getVar('cid', null, 'default', 'array');
-            if($cids === null){
-                JError::raiseError(500, 'No Locations selected');
-            }
-            $model =& $this->getModel('locations');
-            $model->delete($cids);
-            $redirectTo = JRoute::_('index.php?option='.JRequest::getVar('option').'&task=display');
-            $this->setRedirect($redirectTo, 'Deleted');
-            
+	function remove() 
+	{
+		
+		// Check for request forgeries
+		JRequest :: checkToken() or jexit('Invalid Token');
+
+		$db = & JFactory::getDBO();  
+		$cid = JRequest :: getVar('cid', array (), 'post', 'array');
+		JArrayHelper :: toInteger($cid);
+		$msg = JText::_($this->_itemname.' deleted');
+		if (count($cid) < 1) {
+			JError :: raiseError(500, JText :: _('Select a '.$this->_itemname.' to delete'));
+		}
+    	$model = $this->getModel($this->_mainmodel);			
+		if (!$model->delete($cid)) {
+				$msg = $model->getError(); 
+		}		
+		$link = 'index.php?option=com_berthtool&view='.$this->_viewname;
+		$this->setRedirect($link, $msg);
 	}
 
 }// class
